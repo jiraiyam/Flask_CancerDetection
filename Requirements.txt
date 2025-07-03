@@ -1,0 +1,7 @@
+Flask==2.3.2
+Flask-CORS==4.0.0
+requests==2.31.0
+python-dotenv==1.0.0
+logging==0.5.1.2
+gunicorn==21.2.0
+groq==0.3.0  # Official Groq Python library
