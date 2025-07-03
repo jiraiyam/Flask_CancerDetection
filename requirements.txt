@@ -6,3 +6,5 @@ logging
 gunicorn
 groq
 torch
+torchvision
+torchaudio
