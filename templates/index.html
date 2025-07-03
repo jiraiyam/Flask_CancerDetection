@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Medical Analysis Assistant</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            height: 100vh;
+        }
+
+        .panel {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            background: linear-gradient(45deg, #4f46e5, #7c3aed);
+            color: white;
+            padding: 20px 30px;
+            text-align: center;
+            position: relative;
+        }
+
+        .panel-header h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .panel-header p {
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+
+        .upload-section {
+            padding: 30px;
+            text-align: center;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .upload-area {
+            border: 3px dashed #d1d5db;
+            border-radius: 15px;
+            padding: 40px 20px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: #f8fafc;
+        }
+
+        .upload-area:hover {
+            border-color: #4f46e5;
+            background: #f1f5f9;
+            transform: translateY(-2px);
+        }
+
+        .upload-area.dragover {
+            border-color: #4f46e5;
+            background: #eef2ff;
+            transform: scale(1.02);
+        }
+
+        .upload-area.uploading {
+            pointer-events: none;
+            opacity: 0.7;
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            color: #6b7280;
+        }
+
+        .upload-text {
+            font-size: 1.1rem;
+            color: #374151;
+            margin-bottom: 10px;
+        }
+
+        .upload-subtext {
+            color: #6b7280;
+            font-size: 0.9rem;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .upload-btn {
+            background: linear-gradient(45deg, #4f46e5, #7c3aed);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin-top: 15px;
+        }
+
+        .upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(79, 70, 229, 0.3);
+        }
+
+        .upload-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .prediction-results {
+            padding: 20px 30px;
+            border-top: 1px solid #e5e7eb;
+            background: #f8fafc;
+            display: none;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: white;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .result-label {
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .result-confidence {
+            background: linear-gradient(45deg, #10b981, #059669);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f8fafc;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            animation: fadeInUp 0.3s ease;
+        }
+
+        .message.user {
+            text-align: right;
+        }
+
+        .message-bubble {
+            display: inline-block;
+            max-width: 80%;
+            padding: 15px 20px;
+            border-radius: 20px;
+            word-wrap: break-word;
+            position: relative;
+        }
+
+        .message.user .message-bubble {
+            background: linear-gradient(45deg, #4f46e5, #7c3aed);
+            color: white;
+            border-bottom-right-radius: 5px;
+        }
+
+        .message.bot .message-bubble {
+            background: white;
+            color: #374151;
+            border: 1px solid #e5e7eb;
+            border-bottom-left-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .message-time {
+            font-size: 0.75rem;
+            color: #6b7280;
+            margin-top: 5px;
+        }
+
+        .chat-input-container {
+            padding: 20px;
+            border-top: 1px solid #e5e7eb;
+            background: white;
+        }
+
+        .chat-input-wrapper {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid #e5e7eb;
+            border-radius: 25px;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s ease;
+            resize: none;
+            min-height: 50px;
+            max-height: 120px;
+        }
+
+        .chat-input:focus {
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .send-btn {
+            background: linear-gradient(45deg, #4f46e5, #7c3aed);
+            color: white;
+            border: none;
+            padding: 15px 20px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .send-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(79, 70, 229, 0.4);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .quick-actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .quick-btn {
+            background: #f3f4f6;
+            border: 1px solid #d1d5db;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+
+        .quick-btn:hover {
+            background: #e5e7eb;
+            transform: translateY(-1px);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #6b7280;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #4f46e5;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        .prediction-context {
+            background: linear-gradient(45deg, #10b981, #059669);
+            color: white;
+            padding: 15px 20px;
+            margin-bottom: 15px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .context-label {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .image-preview {
+            max-width: 200px;
+            max-height: 200px;
+            border-radius: 10px;
+            margin: 15px auto;
+            display: none;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .clear-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s ease;
+            margin-left: 10px;
+        }
+
+        .clear-btn:hover {
+            background: #dc2626;
+            transform: translateY(-1px);
+        }
+
+        .error-message {
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border: 1px solid #fecaca;
+            display: none;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto 1fr;
+                height: auto;
+                min-height: 100vh;
+            }
+
+            .panel {
+                height: auto;
+                min-height: 300px;
+            }
+
+            .message-bubble {
+                max-width: 90%;
+            }
+        }
+
+        .status-indicator {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #10b981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3);
+        }
+
+        .bot-response pre {
+            background: #f3f4f6;
+            padding: 10px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 0.9rem;
+            margin: 10px 0;
+        }
+
+        .bot-response strong {
+            color: #4f46e5;
+        }
+
+        .bot-response ul, .bot-response ol {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+
+        .emoji {
+            font-size: 1.2em;
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Image Upload Panel -->
+        <div class="panel">
+            <div class="panel-header">
+                <div class="status-indicator"></div>
+                <h2>🔬 Medical Image Analysis</h2>
+                <p>Upload medical images for AI-powered analysis</p>
+            </div>
+
+            <div class="upload-section">
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">📁</div>
+                    <div class="upload-text">Drop your medical image here</div>
+                    <div class="upload-subtext">or click to browse files</div>
+                    <div class="upload-subtext">(PNG, JPG, JPEG, GIF, BMP - Max 16MB)</div>
+                    <button class="upload-btn" id="uploadBtn" onclick="document.getElementById('fileInput').click()">
+                        Choose File
+                    </button>
+                </div>
+
+                <input type="file" id="fileInput" class="file-input" accept="image/*">
+                <img id="imagePreview" class="image-preview" alt="Preview">
+
+                <div class="error-message" id="errorMessage"></div>
+
+                <div class="loading" id="uploadLoading">
+                    <div class="spinner"></div>
+                    Analyzing image...
+                </div>
+            </div>
+
+            <div class="prediction-results" id="predictionResults">
+                <h3 style="margin-bottom: 15px; color: #374151;">📊 Analysis Results</h3>
+                <div id="resultsContent"></div>
+            </div>
+        </div>
+
+        <!-- Chat Panel -->
+        <div class="panel">
+            <div class="panel-header">
+                <h2>🤖 Medical Assistant</h2>
+                <p>Ask questions about your analysis results</p>
+                <button class="clear-btn" onclick="clearChat()">Clear Chat</button>
+            </div>
+
+            <div class="chat-container">
+                <div class="prediction-context" id="predictionContext">
+                    <div class="context-label">🎯 Current Analysis Context</div>
+                    <div id="contextInfo"></div>
+                </div>
+
+                <div class="chat-messages" id="chatMessages">
+                    <div class="message bot">
+                        <div class="message-bubble">
+                            <div class="emoji">🏥</div>
+                            <strong>Welcome to the Enhanced Medical Assistant!</strong><br><br>
+                            I specialize in providing information about:<br>
+                            • <strong>Cancer</strong> - Types, symptoms, treatments<br>
+                            • <strong>Aneurysm</strong> - Causes, symptoms, risk factors<br>
+                            • <strong>Tumor</strong> - Benign vs malignant analysis<br><br>
+                            Upload an image above for analysis, then ask me questions about the results!
+                        </div>
+                        <div class="message-time">System Ready</div>
+                    </div>
+                </div>
+
+                <div class="chat-input-container">
+                    <div class="quick-actions" id="quickActions" style="display: none;">
+                        <button class="quick-btn" onclick="sendQuickMessage('Give me a summary of my results')">
+                            📋 Summary
+                        </button>
+                        <button class="quick-btn" onclick="sendQuickMessage('What should I do about this?')">
+                            💡 Advice
+                        </button>
+                        <button class="quick-btn" onclick="sendQuickMessage('What are the symptoms?')">
+                            🔍 Symptoms
+                        </button>
+                        <button class="quick-btn" onclick="sendQuickMessage('How serious is this condition?')">
+                            ⚠️ Urgency
+                        </button>
+                    </div>
+
+                    <div class="chat-input-wrapper">
+                        <textarea
+                            id="chatInput"
+                            class="chat-input"
+                            placeholder="Ask about your analysis results..."
+                            rows="1"
+                        ></textarea>
+                        <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+                            ➤
+                        </button>
+                    </div>
+                </div>
+
+                <div class="loading" id="chatLoading">
+                    <div class="spinner"></div>
+                    Processing your question...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentPrediction = null;
+        let chatHistory = [];
+        let isUploading = false;
+
+        // Initialize drag and drop
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const imagePreview = document.getElementById('imagePreview');
+        const chatInput = document.getElementById('chatInput');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const errorMessage = document.getElementById('errorMessage');
+
+        // Drag and drop handlers
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            if (!isUploading) {
+                uploadArea.classList.add('dragover');
+            }
+        });
+
+        uploadArea.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            if (isUploading) return;
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileUpload(files[0]);
+            }
+        });
+
+        uploadArea.addEventListener('click', (e) => {
+            if (isUploading) return;
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (isUploading) return;
+            if (e.target.files.length > 0) {
+                handleFileUpload(e.target.files[0]);
+            }
+        });
+
+        // Auto-resize textarea
+        chatInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+        });
+
+        // Send message on Enter (but allow Shift+Enter for new lines)
+        chatInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        function hideError() {
+            errorMessage.style.display = 'none';
+        }
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+        }
+
+        async function handleFileUpload(file) {
+            // Prevent multiple uploads
+            if (isUploading) return;
+
+            hideError();
+
+            // Validate file
+            const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/bmp'];
+            if (!validTypes.includes(file.type)) {
+                showError('Please upload a valid image file (PNG, JPG, JPEG, GIF, BMP)');
+                fileInput.value = '';
+                return;
+            }
+
+            if (file.size > 16 * 1024 * 1024) {
+                showError('File size must be less than 16MB');
+                fileInput.value = '';
+                return;
+            }
+
+            isUploading = true;
+
+            // Update UI state
+            uploadArea.classList.add('uploading');
+            uploadBtn.disabled = true;
+            uploadBtn.textContent = 'Uploading...';
+
+            // Show preview
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                imagePreview.src = e.target.result;
+                imagePreview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+
+            // Show loading
+            document.getElementById('uploadLoading').style.display = 'block';
+            document.getElementById('predictionResults').style.display = 'none';
+
+            try {
+                // Create FormData for file upload
+                const formData = new FormData();
+                formData.append('image', file);
+
+                // Make actual API call to Flask backend
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+
+                if (result.error) {
+                    throw new Error(result.error);
+                }
+
+                displayPredictionResults(result);
+                updatePredictionContext(result);
+                showQuickActions();
+
+                // Clear file input for next upload
+                fileInput.value = '';
+
+            } catch (error) {
+                console.error('Prediction error:', error);
+                showError(`Prediction failed: ${error.message}`);
+
+                // Hide preview on error
+                imagePreview.style.display = 'none';
+
+                // Clear file input
+                fileInput.value = '';
+            } finally {
+                // Reset UI state
+                document.getElementById('uploadLoading').style.display = 'none';
+                uploadArea.classList.remove('uploading');
+                uploadBtn.disabled = false;
+                uploadBtn.textContent = 'Choose File';
+                isUploading = false;
+            }
+        }
+
+        function displayPredictionResults(result) {
+            currentPrediction = result;
+
+            let html = `
+                <div class="result-item">
+                    <span class="result-label">🎯 Primary Condition</span>
+                    <span class="result-confidence">${result.label} (${result.probability})</span>
+                </div>
+            `;
+
+            if (result.tumor_subtype) {
+                html += `
+                    <div class="result-item">
+                        <span class="result-label">🔬 Tumor Subtype</span>
+                        <span class="result-confidence">${result.tumor_subtype} (${result.tumor_subtype_confidence})</span>
+                    </div>
+                `;
+            }
+
+            document.getElementById('resultsContent').innerHTML = html;
+            document.getElementById('predictionResults').style.display = 'block';
+        }
+
+        function updatePredictionContext(result) {
+            const contextInfo = document.getElementById('contextInfo');
+            const predictionContext = document.getElementById('predictionContext');
+
+            let contextText = `Analysis detected: <strong>${result.label}</strong> with ${result.confidence}% confidence`;
+            if (result.tumor_subtype) {
+                contextText += `<br>Tumor subtype: <strong>${result.tumor_subtype}</strong>`;
+            }
+
+            contextInfo.innerHTML = contextText;
+            predictionContext.style.display = 'block';
+        }
+
+        function showQuickActions() {
+            document.getElementById('quickActions').style.display = 'flex';
+        }
+
+        async function sendMessage() {
+            const message = chatInput.value.trim();
+            if (!message) return;
+
+            // Add user message to chat
+            addMessageToChat('user', message);
+            chatInput.value = '';
+            chatInput.style.height = 'auto';
+
+            // Show loading
+            document.getElementById('chatLoading').style.display = 'block';
+            document.getElementById('sendBtn').disabled = true;
+
+            try {
+                // Make actual API call to Flask backend
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message: message })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+
+                if (result.error) {
+                    throw new Error(result.error);
+                }
+
+                addMessageToChat('bot', result.response, result.timestamp);
+
+            } catch (error) {
+                console.error('Chat error:', error);
+                addMessageToChat('bot', `❌ Sorry, I encountered an error: ${error.message}`, new Date().toLocaleTimeString());
+            } finally {
+                document.getElementById('chatLoading').style.display = 'none';
+                document.getElementById('sendBtn').disabled = false;
+                chatInput.focus();
+            }
+        }
+
+        function sendQuickMessage(message) {
+            chatInput.value = message;
+            sendMessage();
+        }
+
+        function addMessageToChat(sender, message, timestamp = null) {
+            const chatMessages = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+
+            const time = timestamp || new Date().toLocaleTimeString();
+
+            // Format bot messages to preserve structure
+            let formattedMessage = message;
+            if (sender === 'bot') {
+                formattedMessage = formatBotMessage(message);
+            }
+
+            messageDiv.innerHTML = `
+                <div class="message-bubble">
+                    ${formattedMessage}
+                </div>
+                <div class="message-time">${time}</div>
+            `;
+
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function formatBotMessage(message) {
+            // Convert markdown-like formatting to HTML
+            return message
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/^• /gm, '• ')
+                .replace(/\n/g, '<br>')
+                .replace(/^(#{1,6})\s+(.+)$/gm, (match, hashes, text) => {
+                    const level = hashes.length;
+                    return `<h${level} style="margin: 10px 0; color: #4f46e5;">${text}</h${level}>`;
+                })
+                .replace(/^─+$/gm, '<hr style="margin: 15px 0; border: none; border-top: 2px solid #e5e7eb;">');
+        }
+
+        async function clearChat() {
+            if (confirm('Clear chat history? (This will keep your analysis results)')) {
+                try {
+                    // Make API call to clear chat
+                    const response = await fetch('/chat/clear', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    });
+
+                    if (response.ok) {
+                        // Clear chat display but keep welcome message
+                        const chatMessages = document.getElementById('chatMessages');
+                        chatMessages.innerHTML = `
+                            <div class="message bot">
+                                <div class="message-bubble">
+                                    <div class="emoji">🏥</div>
+                                    <strong>Chat cleared!</strong><br><br>
+                                    Your analysis results are still available. Ask me any questions about your medical condition!
+                                </div>
+                                <div class="message-time">System</div>
+                            </div>
+                        `;
+                    } else {
+                        throw new Error('Failed to clear chat on server');
+                    }
+
+                } catch (error) {
+                    console.error('Clear chat error:', error);
+                    alert('Failed to clear chat history');
+                }
+            }
+        }
+
+        // Initialize the interface
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Enhanced Medical Analysis Interface Ready');
+            chatInput.focus();
+        });
+    </script>
+</body>
+</html>
